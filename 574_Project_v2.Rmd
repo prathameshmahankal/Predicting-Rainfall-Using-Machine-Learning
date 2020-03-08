@@ -1,0 +1,112 @@
+---
+title: "574 Project"
+author: "Malvika Mohan"
+date: "3/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(MASS)
+library(e1071)
+library(corrplot)
+library(stats)
+library(caret)
+library(pROC)
+```
+
+
+
+```{r}
+weather_data <- read.csv('C:/RP/datasets/weatherAUS.csv')
+weather_data <- data.frame(weather_data)
+weather_data <- na.omit(weather_data)
+rownames(weather_data) <- 1:nrow(weather_data)
+View(weather_data)
+weather_data
+
+```
+
+
+
+```{r }
+#Checking correlation
+temp <- weather_data$RainToday
+weather_data2 <- weather_data %>% select_if(is.numeric) %>% dplyr::select(-RISK_MM) 
+
+bivrel <- cor(weather_data2,y=NULL,use = "everything",method = "pearson")
+corrplot(bivrel, method = "square")
+
+```
+
+```{r }
+#Checking for significant variables for a linear regression model.
+lower_regression_limit <- lm(Rainfall~1,data =head(weather_data2,1000))
+upper_regression_limit <- lm(Rainfall~.,data=head(weather_data2,1000))
+step_model <- stepAIC(lower_regression_limit , scope = list(lower = lower_regression_limit , upper = upper_regression_limit), direction ="both",trace = FALSE)
+summary(step_model)
+```
+
+Retaining the variables as determined by least-squares inference.
+
+
+```{r }
+#Setting up the data for classification.
+weather_data3 <- weather_data2 %>% dplyr::select(Humidity9am,Sunshine,WindSpeed9am,Temp3pm,MaxTemp,WindGustSpeed) %>% cbind(Rain_today = temp)
+
+set.seed(32)
+split_ind <- sample(nrow(weather_data3),size = 0.75 * nrow(weather_data3),replace = FALSE)
+train <- weather_data3[split_ind,]
+test <- weather_data3[-split_ind,]
+train
+attach(train)
+```
+
+```{r}
+#Logistic regression.
+model_logistic <- glm(Rain_today ~.,family = binomial(link = 'logit'),data = train)
+summary(model_logistic)
+predict_logistic <- predict(model_logistic,test,type = 'response')
+
+
+#Confusion Matrix at a threshold of 0.5
+op_logistic <- data.frame(test$Rain_today, predict_logistic)
+op_logistic$classification <- ifelse(op_logistic$predict_logistic > 0.5,1,0)
+op_logistic$test.Rain_today <- if_else(op_logistic$test.Rain_today == 'Yes',1,0)
+confusionMatrix(factor(op_logistic$classification),factor(op_logistic$test.Rain_today))
+
+#ROC 
+par(pty = 's')
+roc(train$Rain_today,model_logistic$fitted.values,plot = TRUE,legacy.axes= TRUE,col = '#ff5252',lwd = 4,print.auc = TRUE)
+
+```
+
+```{r}
+
+model_svm <- svm(Rain_today ~. ,train)
+predict_svm <- predict(model_svm, test,type = 'response')
+summary(model_svm)
+model_svm$fitted
+
+#ConfusionMatrix
+op_svm <- data.frame(test$Rain_today, predict_svm)
+confusionMatrix(factor(op_svm$predict_svm),factor(op_svm$test.Rain_today))
+
+
+#svm_tune <- tune(svm, y~x, data = data, ranges=list(epsilon=seq(0,1,0.1), cost=seq(1,10,1)))
+#ROC
+par(pty = 's')
+roc(train$Rain_today,if_else(model_svm$fitted == 'Yes',1,0),plot = TRUE,legacy.axes= TRUE,col = '#ff5252',lwd = 4,print.auc = TRUE)
+```
+
+```{r}
+par(pty = 's')
+
+#Purple curve: logistic regression model 
+roc(train$Rain_today,model_logistic$fitted.values,plot = TRUE,legacy.axes= TRUE,col = '#9c88ff',lwd = 4,print.auc = TRUE,print.auc.y = 0.3)
+
+
+#Green curve: SVM
+roc(train$Rain_today,if_else(model_svm$fitted == 'Yes',1,0),plot = TRUE,legacy.axes= TRUE,col = '#4cd137',lwd = 4,print.auc = TRUE,add = TRUE,print.auc.y = 0.2)
+```
+
