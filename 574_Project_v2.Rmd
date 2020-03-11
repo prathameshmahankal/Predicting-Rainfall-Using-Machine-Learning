@@ -40,6 +40,87 @@ corrplot(bivrel, method = "square")
 ```
 
 ```{r }
+#Determining the rainfall,average temperature,Humidity trends across three cities =1) Melbourne  
+
+
+weather_dataMel <-weather_data %>% filter(Location=='Melbourne') 
+
+
+dev.new()  # Generates a new plot window.
+
+#Plotting rainfall in inches for melbourne
+plot(ts (weather_dataMel$Rainfall, start=c(2007), end=c(2017), frequency=1),xlab="",ylab="Rainfall in inches",col=" Blue",main = "Yearly precipitation trends of Melbourne inches")
+
+
+
+
+weather_dataMel$Avgtemp <- weather_dataMel %>% group_by(Date) %>% summarise(avgt=mean(MinTemp,MaxTemp,na.rm=TRUE))
+
+#Plotting average temperature in celsius in Melbourne
+plot(ts (weather_dataMel$Avgtemp$avgt, start=c(2007), end=c(2017), frequency=1),ylab="Average temperature in celsius",col="Red",main="Yearly temperature trends of Melbourne ")
+
+
+#Plotting Humidity percentage at 3pm  in Melbourne
+plot(ts (weather_dataMel$Humidity3pm, start=c(2007), end=c(2017), frequency=1),ylab="Percentage of humidity in Melbourne",col="green",main = "Yearly Humidity of Melbourne")
+
+#Plotting Sunshine in Melbourne
+plot(ts (weather_dataMel$Sunshine, start=c(2007), end=c(2017), frequency=1),ylab="Number of hours of sunshine per day",col="orange",main = "Number of days of sunshine in Melbourne")
+```
+
+```{r }
+#Determining the rainfall,average temperature trends across three cities =2) Sydney  
+
+weather_dataSyd <- weather_data %>% filter(Location=='Sydney')
+
+
+plot(ts (weather_dataSyd$Rainfall, start=c(2007), end=c(2017), frequency=1),xlab="",ylab= "Rainfall in inches",col="Blue",main = "Yearly precipitation trends of Sydeny ")
+
+weather_dataSyd<-na.omit(weather_dataSyd);
+weather_dataSyd$Avgtemp <- weather_dataSyd %>% group_by(Date) %>%  summarise(avgt2=mean(MinTemp,MaxTemp,na.rm = TRUE))
+
+
+
+#Plotting average temperature in celsius in Sydney
+plot(ts (weather_dataSyd$Avgtemp$avgt2,  start=c(2007), end=c(2017), frequency=1),xlab="",ylab="Average temperature in celsius",col="Red",main="Yearly temperature trends of Sydney")
+
+#Plotting Humidity percentage at 3pm in Sydney
+plot(ts (weather_dataSyd$Humidity3pm, start=c(2007), end=c(2017), frequency=1),ylab="Percentage of humidity at 3pm in  Sydney",col=" green",main = "Yearly Humidity percentage of Sydney")
+
+
+#Plotting Sunshine in Sydney
+plot(ts (weather_dataSyd$Sunshine, start=c(2007), end=c(2017), frequency=1),ylab="Number of hours of sunshine per day",col="orange",main = "Yearly Number of hours of sunshine in Sydney")
+
+```
+
+```{r }
+#Determining the rainfall,average temperature trends across three cities = 3)Cranberra 
+weather_dataCanberra <- weather_data %>% filter(Location=='Canberra')
+
+
+
+
+plot(ts (weather_dataCanberra$Rainfall, start=c(2007), end=c(2017), frequency=1),xlab="",ylab="Yearly precipitation trends of Cranberra inches",col="Blue")
+
+
+weather_dataCanberra$Avgtemp <- weather_dataCanberra %>% group_by(Date) %>%  summarise(avgt3=mean(MinTemp,MaxTemp,na.rm = TRUE))
+
+
+
+
+#Plotting average temperature in celsius in Cranberra
+plot(ts (weather_dataCanberra$Avgtemp$avgt3,  start=c(2007), end=c(2017), frequency=1),xlab="",ylab="Average temperature of Cranberra in degrees",col="Red")
+
+
+#Plotting percentage of Humidity at 3pm in Canberra
+plot(ts (weather_dataCanberra$Humidity3pm, start=c(2007), end=c(2017), frequency=1),ylab="Percentage of humidity at 3pm in Cranberra",col=" green",main = "Yearly Humidity percentage of Cranberra")
+
+
+#Plotting Sunshine in Canberra
+plot(ts (weather_dataCanberra$Sunshine, start=c(2007), end=c(2017), frequency=1),ylab="Number of hours of sunshine",col="orange",main = "Number of days of sunshine in Canberra")
+
+```
+
+```{r }
 #Checking for significant variables for a linear regression model.
 lower_regression_limit <- lm(Rainfall~1,data =head(weather_data2,1000))
 upper_regression_limit <- lm(Rainfall~.,data=head(weather_data2,1000))
